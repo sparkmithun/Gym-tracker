@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Loading } from '@/components/ui';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+import { HealthManager } from '@/features/activity/HealthManager';
 import { SyncManager } from '@/sync/SyncManager';
 import { colors } from '@/theme';
 
@@ -20,6 +21,7 @@ function RootStack() {
   return (
     <>
       <SyncManager />
+      <HealthManager />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
@@ -51,6 +53,12 @@ function RootStack() {
           <Stack.Screen name="measurements" options={{ title: 'Measurements' }} />
           <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
           <Stack.Screen name="plates" options={{ title: 'Plate Calculator', presentation: 'modal' }} />
+          <Stack.Screen name="group/new" options={{ title: 'New Group', presentation: 'modal' }} />
+          <Stack.Screen name="group/[id]" options={{ title: 'Group' }} />
+          <Stack.Screen name="contest/new" options={{ title: 'New Contest', presentation: 'modal' }} />
+          <Stack.Screen name="contest/[id]" options={{ title: 'Contest' }} />
+          <Stack.Screen name="sport/[id]" options={{ title: 'Sport Session', presentation: 'modal' }} />
+          <Stack.Screen name="food/[id]" options={{ title: 'Food', presentation: 'modal' }} />
         </Stack.Protected>
       </Stack>
     </>

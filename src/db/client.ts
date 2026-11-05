@@ -8,7 +8,7 @@ export const db = openDatabaseSync('sparklift.db');
 export const USER_TABLES = [
   'workout_sets', 'workout_exercises', 'workouts',
   'routine_sets', 'routine_exercises', 'routines', 'routine_folders',
-  'body_measurements', 'profiles',
+  'body_measurements', 'daily_activity', 'sport_sessions', 'food_entries', 'profiles',
 ] as const;
 
 let ready: Promise<void> | null = null;

@@ -4,6 +4,7 @@ import { Alert, ScrollView, View } from 'react-native';
 import { Button, Card, Chip, Input, Row, Stat, T, styles } from '@/components/ui';
 import type { Visibility } from '@/db/types';
 import { loadRoutineDraft, saveRoutine } from '@/features/routines/data';
+import { myPoints } from '@/features/social/local';
 import { saveWorkout, workoutRecords } from '@/features/workout/data';
 import { draftTotals, type DraftWorkout } from '@/features/workout/draft';
 import { useNow } from '@/hooks/useNow';
@@ -72,16 +73,22 @@ export default function FinishWorkout() {
           .filter((e) => e.sets.length > 0),
       };
       const prs = await workoutRecords(userId, cleaned);
+      const before = (await myPoints(userId)).summary;
       await saveWorkout(userId, cleaned);
+      const after = (await myPoints(userId)).summary;
       await offerRoutineUpdate(userId, cleaned);
       discard();
       router.dismissAll();
       router.push(`/workout/${cleaned.id}`);
-      if (prs.length) {
-        Alert.alert(
-          `🏆 ${prs.reduce((n, p) => n + p.kinds.length, 0)} new personal records!`,
-          prs.map((p) => `${p.name}: ${p.kinds.map((k) => PR_LABELS[k]).join(', ')}`).join('\n'),
-        );
+      // Difference in all-time points, so the daily cap and streak bonus are reflected.
+      const earned = after.total - before.total;
+      const lines = [
+        after.streak > 0 ? `🔥 ${after.streak}-day streak${after.streak > before.streak ? ' — keep it going tomorrow!' : ''}` : '',
+        prs.length ? `\n🏆 ${prs.reduce((n, p) => n + p.kinds.length, 0)} new personal records` : '',
+        ...prs.map((p) => `${p.name}: ${p.kinds.map((k) => PR_LABELS[k]).join(', ')}`),
+      ].filter(Boolean);
+      if (earned > 0 || prs.length) {
+        Alert.alert(earned > 0 ? `+${earned} points!` : 'Workout saved', lines.join('\n'));
       }
     } catch (e) {
       Alert.alert('Could not save', e instanceof Error ? e.message : String(e));

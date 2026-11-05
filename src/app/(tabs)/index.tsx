@@ -4,6 +4,9 @@ import { BarChart, HBar } from '@/components/Charts';
 import { Button, Card, EmptyState, Row, SectionTitle, Stat, T, styles } from '@/components/ui';
 import { useLiveQuery } from '@/db/live';
 import { label } from '@/db/types';
+import { daySummary, dayKey } from '@/features/activity/data';
+import { PointsCard } from '@/features/social/components';
+import { myPoints } from '@/features/social/local';
 import { muscleDistribution, totalWorkouts, weekStreak, weeklySummary } from '@/features/stats/data';
 import { listWorkouts } from '@/features/workout/data';
 import { WorkoutCard } from '@/features/workout/components/WorkoutCard';
@@ -20,14 +23,16 @@ export default function Home() {
   const start = useStartWorkout();
 
   const { data } = useLiveQuery(async () => {
-    const [weeks, streak, total, muscles, recent] = await Promise.all([
+    const [weeks, streak, total, muscles, recent, points, today] = await Promise.all([
       weeklySummary(userId, 8),
       weekStreak(userId),
       totalWorkouts(userId),
       muscleDistribution(userId, 30),
       listWorkouts(userId, 3),
+      myPoints(userId),
+      daySummary(userId, dayKey(new Date())),
     ]);
-    return { weeks, streak, total, muscles, recent };
+    return { weeks, streak, total, muscles, recent, points: points.summary, today };
   }, [userId]);
 
   const thisWeek = data?.weeks[data.weeks.length - 1];
@@ -37,6 +42,17 @@ export default function Home() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <T v="h2">Hi {profile?.display_name?.split(' ')[0] ?? profile?.username ?? 'there'} 👋</T>
       <Button title="Start Empty Workout" icon="add" onPress={() => start()} />
+
+      <Card onPress={() => router.push('/activity')} style={{ gap: space.md }}>
+        <T v="h3">Today</T>
+        <Row>
+          <Stat label="Steps" value={`👣 ${(data?.today.steps ?? 0).toLocaleString()}`} />
+          <Stat label="Eaten" value={`${data?.today.calories.eaten ?? 0} kcal`} />
+          <Stat label="Burned" value={`${data?.today.calories.burned ?? 0} kcal`} />
+        </Row>
+      </Card>
+
+      <PointsCard s={data?.points} onPress={() => router.push('/compete')} />
 
       <Card style={{ gap: space.md }}>
         <T v="h3">This week</T>

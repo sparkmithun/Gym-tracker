@@ -32,6 +32,9 @@ export type Profile = {
   unit_distance: 'km' | 'mi';
   default_rest_seconds: number;
   is_private: boolean;
+  timezone: string;
+  step_goal: number;
+  calorie_goal: number;
 };
 
 export type RoutineRow = {

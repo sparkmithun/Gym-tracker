@@ -24,7 +24,7 @@ What is left needs your accounts or a device: see **`SETUP.md`**.
 | 7 Sync | ✅ Custom outbox sync (Option B) |
 | 8 Polish | ✅ Settings, CSV export, delete account. ⏳ Sentry, store assets, privacy policy, Maestro E2E |
 | 9 v1.1 | ✅ Dashboard, streak, muscle distribution, calendar, measurements, plate calculator. ⏳ Body heatmap SVG, warm-up calculator |
-| 10 v2 | ⏳ Not started (social, Health, watch, Pro) |
+| 10 v2 | ✅ Compete: points, daily streaks, leaderboards, groups, contests (2026-11-02). ⏳ Feed/likes/comments, push, Health, watch, Pro |
 
 **Deviations from the plan below (simpler, same result):**
 - Local DB uses `expo-sqlite` with plain SQL instead of Drizzle — fewer build steps; schema in `src/db/migrations.ts`.
@@ -532,6 +532,36 @@ Option B (no extra service): custom outbox
 
 ## Phase 10 — v2
 
+### 10.1 Compete (done)
+Migration `supabase/migrations/20261102000001_social.sql`; app code in `src/features/social/` and the **Compete** tab.
+
+- **Points** are derived from synced workouts (views in a `private` schema the API can't read), never stored.
+  Same formula client-side (`points.ts`, unit-tested) for offline/guest use and server-side for leaderboards:
+  10 per workout (needs ≥ 1 completed working set) + 2/set (≤ 40) + 1 per 500 kg (≤ 50) + 1 per 5 min (≤ 24) + 1 per km (≤ 20);
+  a day is capped at 200, then **+5 per consecutive day** (≤ +30).
+- **Daily streak**: consecutive local days with a workout; alive until a full day is missed. `profiles.timezone` (sent by the app) defines "a day".
+- **Leaderboards**: `leaderboard(period, group)` — today / week / month / all-time, global (private profiles hidden) or per group. Top 100 + your own row.
+- **Groups**: public (discoverable) or private (invite code). Owner can't leave, only delete. `list_groups`, `join_group(code)`; joining a public group is a plain insert under RLS.
+- **Contests**: metric = points / workouts / volume / duration, 1–93 days, public, private (code) or group-only.
+  The app auto-creates an official **monthly Points Challenge** and **Weekly Warrior** on first listing. `list_contests`, `join_contest`, `contest_leaderboard`.
+- Verified against Postgres (PGlite) with stub auth: scores, ranking, private-profile hiding, RLS on joins/leaves, invite codes, official contests.
+- Scale note: views compute on read. Fine for thousands of users; beyond that, materialise `daily_scores` (refresh on workout write).
+
+### 10.2 Activity, calories & web dashboard (done, 2026-11-05)
+Migration `20261105000001_activity.sql`; app code in `src/features/activity/` and the **Activity** tab; web in `web/`.
+
+- **Steps (auto)**: `react-native-health-connect` (Android) and `@kingstinct/react-native-healthkit` (iOS), loaded lazily so
+  Expo Go still runs. Daily steps + distance for the last 14 days import on launch, on foreground and every 30 min into
+  `daily_activity` (id derived from user + day so two phones merge). Health Connect requires `minSdkVersion 26`.
+- **Sports**: 21 sports with MET values for light / moderate / hard; the kcal estimate is stored with the session.
+- **Calories**: burned = gym (MET 5) + sports + steps (0.04 kcal/step at 70 kg), scaled by the latest body weight.
+  Food log with meals, macros and one-tap "recent foods". Remaining = goal − eaten + burned. Goals in Settings.
+- **Web dashboard**: Next.js 16 (App Router, Cache Components, `proxy.ts`), Supabase SSR auth with Google, read-only.
+  Pages: Overview (tiles + steps / calories / workouts charts), Workouts (+ detail), Activity & food, Compete.
+  Reads run as the user under RLS; own points come from `my_daily_scores()`.
+- Not yet: sports/steps don't earn points or count toward streaks; food database search / barcode scanning.
+
+### 10.3 Later
 - [ ] Social: `follows`, `workout_likes`, `workout_comments` tables + RLS (`visibility='public'` or the viewer follows the owner and `visibility='followers'`)
 - [ ] Home feed query (paginated, cursor on `ended_at`), likes, comments, user search
 - [ ] Push notifications (Expo Push + Edge Function triggers)

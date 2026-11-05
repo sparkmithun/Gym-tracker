@@ -4,7 +4,7 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { afterWrite } from '@/sync/sync';
 import { nowIso, uuid } from '@/utils/uuid';
 
-export type ProfilePatch = Partial<Pick<Profile, 'username' | 'display_name' | 'bio' | 'unit_weight' | 'unit_distance' | 'default_rest_seconds' | 'is_private' | 'avatar_url'>>;
+export type ProfilePatch = Partial<Pick<Profile, 'username' | 'display_name' | 'bio' | 'unit_weight' | 'unit_distance' | 'default_rest_seconds' | 'is_private' | 'avatar_url' | 'timezone' | 'step_goal' | 'calorie_goal'>>;
 
 export async function updateProfile(userId: string, patch: ProfilePatch) {
   const entries = Object.entries(patch).filter(([, v]) => v !== undefined);

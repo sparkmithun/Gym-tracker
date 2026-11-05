@@ -33,7 +33,9 @@ Scan the QR code with **Expo Go** (Android) or the Camera app (iOS), then tap **
 2. **SQL Editor** → run these files in order (copy-paste each one):
    1. `supabase/migrations/20261101000001_init.sql`
    2. `supabase/migrations/20261101000002_rls.sql`
-   3. `supabase/seed.sql` — **required**: workouts reference these exercise IDs, so sync fails without them.
+   3. `supabase/migrations/20261102000001_social.sql` — points, leaderboards, groups, contests. **Required**: the app syncs `profiles.timezone`.
+   4. `supabase/migrations/20261105000001_activity.sql` — steps, sports sessions, food log, goals. **Required**: the app syncs these tables.
+   5. `supabase/seed.sql` — **required**: workouts reference these exercise IDs, so sync fails without them.
 
    Or with the CLI:
    ```bash
@@ -58,6 +60,10 @@ In https://console.cloud.google.com → create a project → **APIs & Services**
    - **Android** → package `com.spark.lift` + SHA-1 fingerprint. Get the SHA-1 with `npx eas-cli@latest credentials` (Android → development keystore). After publishing on Play, also add the **Play App Signing** SHA-1 from Play Console.
    - **iOS** → bundle ID `com.spark.lift` → put the Client ID in `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`.
 3. Supabase → **Authentication → Sign In / Providers → Google** → enable, paste the **Web** client ID + secret, and add the Android + iOS client IDs to **Authorized Client IDs** (comma-separated).
+4. For the **web dashboard** (§7): in the Google **Web application** client add the Authorized redirect URI
+   `https://YOUR-PROJECT.supabase.co/auth/v1/callback`, and in Supabase → **Authentication → URL Configuration**
+   set **Site URL** to the dashboard's address and add `http://localhost:3000/auth/callback` and
+   `https://YOUR-DASHBOARD/auth/callback` to **Redirect URLs**.
 
 ## 4. Apple Sign-In (iOS only; required by App Store rule 4.8)
 
@@ -83,7 +89,37 @@ Install the APK it links to on your phone, then run `npx expo start` and open th
 > Put the same `EXPO_PUBLIC_*` values into EAS so cloud builds get them:
 > `npx eas-cli@latest env:create` (or the expo.dev dashboard → Environment variables).
 
-## 6. Release
+## 6. Steps — Health Connect / Apple Health
+
+Steps and walking distance import automatically once the user taps **Activity → Track steps** (or Settings → Connect).
+Both need the installed app (a rebuilt APK / EAS build), not Expo Go.
+
+- **Android**: the phone needs **Health Connect** (built into Android 14+, a Play Store app on Android 8–13).
+  Steps from Samsung Health, Google Fit, Fitbit etc. arrive if those apps share to Health Connect.
+  Before a Play Store release, declare the Health Connect permissions (Steps, Distance — read only) in Play Console; approval takes about a week.
+- **iOS**: HealthKit is added by the config plugin. Enable the **HealthKit** capability for `com.spark.lift`
+  in the Apple Developer portal if EAS doesn't do it for you.
+
+## 7. Web dashboard (Next.js, `web/`)
+
+Read-only dashboard of everything synced from the phone: workouts, steps, sports, food, calories, points, leaderboards.
+
+```bash
+cd web
+```
+```bash
+npm install
+```
+```bash
+npm run dev
+```
+
+Open http://localhost:3000. `web/.env.local` needs the same Supabase URL and publishable key as the app (see `web/.env.example`).
+
+**Deploy on Vercel** (free): import the GitHub repo → **Root Directory = `web`** → add `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` → Deploy. Then add `https://<your-app>.vercel.app/auth/callback` to Supabase Redirect URLs (§3.4).
+
+## 8. Release
 
 ```bash
 npx eas-cli@latest build --profile production --platform all
@@ -114,11 +150,12 @@ Store checklist: privacy policy URL, Play **Data safety** form, App Store **priv
 ```
 src/app/            screens (Expo Router — each file is a route)
 src/components/     shared UI (buttons, cards, charts, sheets)
-src/features/       exercises, routines, workout, stats, profile — data + components
+src/features/       exercises, routines, workout, stats, profile, social, activity — data + components
 src/db/             local SQLite: schema migrations, client, live queries
 src/sync/           offline-first sync with Supabase (push dirty rows, pull by updated_at)
 src/store/          zustand stores (active workout — persisted every change)
 src/lib/            supabase client, Google/Apple auth
 supabase/           Postgres migrations, RLS, seed, tests
 scripts/            exercise library source + seed generator
+web/                Next.js web dashboard (separate npm project)
 ```

@@ -34,6 +34,8 @@ const config: ExpoConfig = {
       monochromeImage: './assets/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
+    // Read-only Health Connect access for daily steps and walking distance.
+    permissions: ['android.permission.health.READ_STEPS', 'android.permission.health.READ_DISTANCE'],
   },
   plugins: [
     'expo-router',
@@ -45,6 +47,17 @@ const config: ExpoConfig = {
     ['expo-notifications', { color: '#3D8BFF' }],
     ['expo-image-picker', { photosPermission: 'Attach a photo to your workout.' }],
     ['@react-native-google-signin/google-signin', { iosUrlScheme }],
+    'react-native-health-connect',
+    [
+      '@kingstinct/react-native-healthkit',
+      {
+        NSHealthShareUsageDescription: 'Spark Lift reads your steps and walking distance to track daily activity and calories.',
+        NSHealthUpdateUsageDescription: false,
+        background: false,
+      },
+    ],
+    // Health Connect needs Android 8.0+.
+    ['expo-build-properties', { android: { minSdkVersion: 26 } }],
   ],
   experiments: { typedRoutes: false },
   extra: {

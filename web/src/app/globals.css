@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Same dark palette as the mobile app (src/theme/index.ts). */
+:root {
+  --bg: #0e0f12;
+  --surface: #17191e;
+  --surface-alt: #20232a;
+  --border: #2a2e37;
+  --text: #f2f4f8;
+  --text-dim: #9aa3b2;
+  --text-muted: #646c7a;
+  --primary: #3d8bff;
+  --primary-dim: #1d3b66;
+  --success: #2fbf71;
+  --danger: #f04f5a;
+  --gold: #ffc94a;
+  /* chart series, validated for the dark surface (dataviz validator: all checks pass) */
+  --series-1: #3d8bff;
+  --series-2: #c9731a;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-dim: var(--text-dim);
+  --color-muted: var(--text-muted);
+  --color-primary: var(--primary);
+  --color-primary-dim: var(--primary-dim);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-gold: var(--gold);
+  --font-sans: var(--font-geist-sans);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}

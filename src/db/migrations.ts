@@ -144,4 +144,50 @@ CREATE TABLE body_measurements (
   ${sync}
 );
 `,
+  // 2: local calendar zone, so the server can bucket points into the user's days.
+  `ALTER TABLE profiles ADD COLUMN timezone TEXT NOT NULL DEFAULT 'UTC';`,
+  // 3: steps (from Health Connect / Apple Health), sports sessions, food log, goals.
+  `
+ALTER TABLE profiles ADD COLUMN step_goal INTEGER NOT NULL DEFAULT 8000;
+ALTER TABLE profiles ADD COLUMN calorie_goal INTEGER NOT NULL DEFAULT 2000;
+
+CREATE TABLE daily_activity (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  steps INTEGER NOT NULL DEFAULT 0,
+  distance_m REAL NOT NULL DEFAULT 0,
+  source TEXT NOT NULL DEFAULT 'manual',
+  ${sync}
+);
+CREATE UNIQUE INDEX daily_activity_day_idx ON daily_activity (user_id, day);
+
+CREATE TABLE sport_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  sport TEXT NOT NULL,
+  started_at TEXT NOT NULL,
+  duration_s INTEGER NOT NULL,
+  intensity TEXT NOT NULL DEFAULT 'moderate',
+  distance_m REAL,
+  calories_kcal INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
+  ${sync}
+);
+CREATE INDEX sport_sessions_started_idx ON sport_sessions (started_at DESC);
+
+CREATE TABLE food_entries (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  eaten_at TEXT NOT NULL,
+  meal TEXT NOT NULL DEFAULT 'snack',
+  name TEXT NOT NULL,
+  calories_kcal INTEGER NOT NULL,
+  protein_g REAL,
+  carbs_g REAL,
+  fat_g REAL,
+  ${sync}
+);
+CREATE INDEX food_entries_eaten_idx ON food_entries (eaten_at DESC);
+`,
 ];

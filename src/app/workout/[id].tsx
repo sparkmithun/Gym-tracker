@@ -6,6 +6,7 @@ import { OptionsSheet } from '@/components/OptionsSheet';
 import { Card, IconButton, Ionicons, Loading, Row, Stat, T, styles } from '@/components/ui';
 import { useLiveQuery } from '@/db/live';
 import { TYPE_FIELDS } from '@/db/types';
+import { pointsForWorkout } from '@/features/social/local';
 import { deleteWorkout, loadWorkoutDraft, workoutRecords } from '@/features/workout/data';
 import { draftTotals } from '@/features/workout/draft';
 import { SET_TYPE_STYLE } from '@/features/workout/components/SetRow';
@@ -27,14 +28,14 @@ export default function WorkoutDetail() {
   const [menu, setMenu] = useState(false);
   const { data } = useLiveQuery(async () => {
     const w = await loadWorkoutDraft(id);
-    return w ? { w, prs: await workoutRecords(userId, w) } : null;
+    return w ? { w, prs: await workoutRecords(userId, w), points: await pointsForWorkout(userId, id) } : null;
   }, [id, userId]);
 
   if (data === undefined) return <Loading />;
   if (data === null) {
     return <View style={[styles.screen, { padding: space.xl }]}><T dim>This workout was deleted.</T></View>;
   }
-  const { w, prs } = data;
+  const { w, prs, points } = data;
   const totals = draftTotals(w.exercises);
   const prByExercise = new Map(prs.map((p) => [p.exerciseId, p.kinds]));
 
@@ -60,6 +61,7 @@ export default function WorkoutDetail() {
             <Stat label="Volume" value={u.volume(totals.volume)} />
             <Stat label="Sets" value={String(totals.sets)} />
             <Stat label="PRs" value={`🏆 ${prs.reduce((n, p) => n + p.kinds.length, 0)}`} />
+            <Stat label="Points" value={`⚡ ${points}`} />
           </Row>
         </Card>
         {w.notes ? <T dim>{w.notes}</T> : null}

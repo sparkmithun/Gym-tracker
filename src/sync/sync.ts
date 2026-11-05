@@ -27,6 +27,9 @@ const TABLES: TableSpec[] = [
   { name: 'workout_exercises', owner: 'user_id' },
   { name: 'workout_sets', owner: 'user_id', booleans: ['completed'] },
   { name: 'body_measurements', owner: 'user_id' },
+  { name: 'daily_activity', owner: 'user_id' },
+  { name: 'sport_sessions', owner: 'user_id' },
+  { name: 'food_entries', owner: 'user_id' },
 ];
 
 const LOCAL_ONLY = new Set(['dirty']);
@@ -172,6 +175,8 @@ export async function lastSyncedAt(): Promise<string | null> {
 /** A guest who signs in keeps their workouts: re-own every row and mark it for upload. */
 export async function adoptGuestData(guestId: string, userId: string) {
   await db.withTransactionAsync(async () => {
+    // Step rows have ids derived from the owner; the health import recreates them under the account.
+    await db.runAsync('DELETE FROM daily_activity WHERE user_id = ?', guestId);
     for (const t of TABLES) {
       if (t.owner === 'id') continue;
       await db.runAsync(`UPDATE ${t.name} SET ${t.owner} = ?, dirty = 1 WHERE ${t.owner} = ?`, userId, guestId);
